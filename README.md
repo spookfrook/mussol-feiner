@@ -21,6 +21,28 @@ The menu bar stays intentionally compact:
 
 There is no project catalogue to maintain. Repeated codes are grouped automatically, and entries can be edited later to normalize them.
 
+## Screenshots
+
+### Weekly energy
+
+Daily load, work-mode capacity, and automatic project grouping.
+
+![Mussol Feiner weekly analytics with daily work-mode load and project breakdown](assets/screenshots/week.png)
+
+### Eight-week trends
+
+Time by work mode alongside duration-weighted Focus Score.
+
+![Mussol Feiner eight-week work-mode and focus trends](assets/screenshots/trends.png)
+
+### Today
+
+Color-coded entries, work-mode mix, and project totals at a glance.
+
+![Mussol Feiner daily analytics with color-coded time entries](assets/screenshots/today.png)
+
+<sub>Screenshots use synthetic data.</sub>
+
 ## MVP
 
 - One active timer at a time
