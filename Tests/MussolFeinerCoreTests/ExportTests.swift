@@ -46,9 +46,10 @@ final class ExportTests: XCTestCase {
 
         XCTAssertTrue(csv.hasSuffix("\r\n"))
         XCTAssertTrue(csv.contains("Deep Work,DPW"))
-        let rows = String(csv.dropLast(2)).components(separatedBy: "\r\n")
-        XCTAssertEqual(rows.count, 2)
-        XCTAssertTrue(rows.last?.hasSuffix(",") == true)
+        let rows = csv.components(separatedBy: "\r\n")
+        XCTAssertEqual(rows.count, 3)
+        XCTAssertTrue(rows[1].hasSuffix(","))
+        XCTAssertEqual(rows.last, "")
     }
 
     func testAtomicExportHasOwnerOnlyPermissions() throws {

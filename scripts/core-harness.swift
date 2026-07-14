@@ -79,10 +79,11 @@ enum MussolFeinerCoreHarness {
         let csv = try DataExporter.string(for: reloaded.entries, format: .csv)
         try expect(csv.contains("Deep Work,DPW"), "CSV export is missing work-mode fields")
         try expect(csv.hasSuffix("\r\n"), "CSV export must use RFC 4180 line endings")
-        let csvRows = String(csv.dropLast(2)).components(separatedBy: "\r\n")
-        try expect(csvRows.count == 4, "CSV export must contain a header plus three rows")
+        let csvRows = csv.components(separatedBy: "\r\n")
+        try expect(csvRows.count == 5, "CSV export must contain a header plus three rows")
+        try expect(csvRows.last == "", "CSV export must end after its final line ending")
         try expect(
-            csvRows.dropFirst().contains(where: { $0.hasSuffix(",") }),
+            csvRows.dropFirst().dropLast().contains(where: { $0.hasSuffix(",") }),
             "CSV export must leave a missing focus score blank"
         )
 
