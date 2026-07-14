@@ -1,0 +1,23 @@
+name: CI
+
+on:
+  push:
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  test-and-build:
+    runs-on: macos-14
+    steps:
+      - uses: actions/checkout@v4
+      - name: Run core tests
+        run: ./scripts/test.sh
+      - name: Build Universal 2 app
+        run: MUSSOL_ARCHES="arm64 x86_64" ./scripts/build-app.sh
+      - name: Verify bundle
+        run: |
+          test "$(lipo -archs 'dist/Mussol Feiner.app/Contents/MacOS/mussol-feiner')" = "x86_64 arm64"
+          plutil -lint "dist/Mussol Feiner.app/Contents/Info.plist"
+          codesign --verify --deep --strict "dist/Mussol Feiner.app"
