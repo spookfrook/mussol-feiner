@@ -109,6 +109,34 @@ final class TimeTrackingStoreTests: XCTestCase {
         XCTAssertTrue(store.entries.isEmpty)
     }
 
+    @MainActor
+    func testUpdateActiveTimerStartBackdatesAndPersists() throws {
+        let location = try temporaryStorageURL()
+        let store = try TimeTrackingStore(storageURL: location)
+        let start = Date(timeIntervalSince1970: 50_000)
+        _ = try store.startTimer(projectCode: "own", workMode: .deepWork, at: start)
+
+        let backdated = start.addingTimeInterval(-300)
+        try store.updateActiveTimerStart(to: backdated)
+
+        XCTAssertEqual(store.activeTimer?.start, backdated)
+        XCTAssertEqual(store.activeTimer?.elapsed(at: start), 300)
+        XCTAssertTrue(store.entries.isEmpty)
+
+        let restored = try TimeTrackingStore(storageURL: location)
+        XCTAssertEqual(restored.activeTimer?.start, backdated)
+        XCTAssertEqual(restored.activeTimer?.projectCode, "OWN")
+    }
+
+    @MainActor
+    func testUpdateActiveTimerStartWithoutActiveTimerThrows() throws {
+        let store = try TimeTrackingStore(storageURL: temporaryStorageURL())
+
+        XCTAssertThrowsError(try store.updateActiveTimerStart(to: Date())) { error in
+            XCTAssertEqual(error as? TimeTrackingValidationError, .noActiveTimer)
+        }
+    }
+
     private func temporaryStorageURL() throws -> URL {
         let directory = FileManager.default.temporaryDirectory
             .appendingPathComponent("MussolFeinerTests-\(UUID().uuidString)", isDirectory: true)

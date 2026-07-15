@@ -9,6 +9,7 @@ struct MenuBarPopoverView: View {
 
     @State private var projectCode = ""
     @State private var selectedMode: UIWorkMode = .deepWork
+    @State private var elapsedInput = ""
     @FocusState private var projectFieldFocused: Bool
 
     var body: some View {
@@ -22,7 +23,7 @@ struct MenuBarPopoverView: View {
                 startPanel
                 if model.pendingFocusEntryID != nil {
                     Divider().overlay(MussolTheme.ink.opacity(0.4))
-                    focusPrompt
+                    FocusPromptView(model: model)
                 }
                 Divider().overlay(MussolTheme.ink.opacity(0.4))
                 footer
@@ -39,6 +40,7 @@ struct MenuBarPopoverView: View {
                 projectCode = active.projectCode
                 selectedMode = active.mode
             }
+            elapsedInput = ""
             focusProjectField()
         }
         .onChange(of: model.popoverFocusRequest) { _ in focusProjectField() }
@@ -81,12 +83,12 @@ struct MenuBarPopoverView: View {
                     Text(active.projectCode)
                         .font(.system(size: 20, weight: .black, design: .monospaced))
                     Spacer()
-                    Text(formatClock(model.elapsed))
-                        .font(.system(size: 22, weight: .bold, design: .monospaced))
-                        .monospacedDigit()
+                    EditableElapsedText(elapsed: model.elapsed, fontSize: 22) {
+                        model.commitElapsedEdit($0)
+                    }
                 }
                 HStack {
-                    Text(active.mode.label)
+                    Text("\(active.mode.label) · since \(formatEnglishDate(active.startedAt, "HH:mm"))")
                         .font(.system(size: 11, weight: .semibold))
                         .foregroundStyle(MussolTheme.mutedInk)
                     Spacer()
@@ -167,61 +169,21 @@ struct MenuBarPopoverView: View {
                 Spacer(minLength: 0)
             }
 
-            Button {
-                model.startTimer(projectCode: projectCode, mode: selectedMode)
-            } label: {
-                Label(model.activeTimer == nil ? "Start timer" : "Start new timer", systemImage: "play.fill")
-                    .frame(maxWidth: .infinity)
-            }
-            .buttonStyle(PrimaryInkButtonStyle())
-            .disabled(projectCode.count != 3)
-            .keyboardShortcut(.return, modifiers: [])
-        }
-        .padding(14)
-    }
-
-    private var focusPrompt: some View {
-        VStack(alignment: .leading, spacing: 10) {
-            HStack {
-                VStack(alignment: .leading, spacing: 2) {
-                    Text("HOW FOCUSED WERE YOU?")
-                        .font(.system(size: 11, weight: .black, design: .monospaced))
-                    Text("Optional self-assessment for the timer you stopped.")
-                        .font(.system(size: 10))
-                        .foregroundStyle(MussolTheme.mutedInk)
-                    if let pendingEntry {
-                        Text("\(pendingEntry.projectCode) · \(pendingEntry.mode.label) · \(formatClock(pendingEntry.duration))")
-                            .font(.system(size: 9, weight: .bold, design: .monospaced))
-                            .foregroundStyle(MussolTheme.mutedInk)
-                    }
+            HStack(spacing: 10) {
+                ElapsedPrefillField(text: $elapsedInput)
+                Button {
+                    model.startTimer(projectCode: projectCode, mode: selectedMode, elapsedInput: elapsedInput)
+                    if model.alertMessage == nil { elapsedInput = "" }
+                } label: {
+                    Label(model.activeTimer == nil ? "Start timer" : "Start new timer", systemImage: "play.fill")
+                        .frame(maxWidth: .infinity)
                 }
-                Spacer()
-                Button("Skip") { model.skipPendingFocus() }
-                    .buttonStyle(.link)
-            }
-
-            HStack(spacing: 5) {
-                ForEach(1...5, id: \.self) { score in
-                    Button {
-                        model.setPendingFocus(score)
-                    } label: {
-                        VStack(spacing: 3) {
-                            Text("\(score)")
-                                .font(.system(size: 15, weight: .black, design: .monospaced))
-                            Text(focusLabel(score))
-                                .font(.system(size: 7, weight: .semibold))
-                                .lineLimit(1)
-                        }
-                        .frame(maxWidth: .infinity, minHeight: 38)
-                    }
-                    .buttonStyle(.plain)
-                    .background(MussolTheme.paperLight)
-                    .overlay(Rectangle().stroke(MussolTheme.ink.opacity(0.45), lineWidth: 1))
-                }
+                .buttonStyle(PrimaryInkButtonStyle())
+                .disabled(projectCode.count != 3)
+                .keyboardShortcut(.return, modifiers: [])
             }
         }
         .padding(14)
-        .background(MussolTheme.signalYellow.opacity(0.20))
     }
 
     private var footer: some View {
@@ -251,11 +213,6 @@ struct MenuBarPopoverView: View {
         )
     }
 
-    private var pendingEntry: UIEntry? {
-        guard let id = model.pendingFocusEntryID else { return nil }
-        return model.entries.first(where: { $0.id == id })
-    }
-
     private var alertPresented: Binding<Bool> {
         Binding(
             get: { model.alertMessage != nil },
@@ -269,16 +226,6 @@ struct MenuBarPopoverView: View {
             DispatchQueue.main.async {
                 NSApp.sendAction(#selector(NSText.selectAll(_:)), to: nil, from: nil)
             }
-        }
-    }
-
-    private func focusLabel(_ score: Int) -> String {
-        switch score {
-        case 1: return "Distracted"
-        case 2: return "Fragmented"
-        case 3: return "Steady"
-        case 4: return "Focused"
-        default: return "Locked in"
         }
     }
 }
