@@ -30,6 +30,8 @@ struct AnalyticsWindowView: View {
             VStack(spacing: 0) {
                 appHeader
                 Divider().overlay(MussolTheme.ink.opacity(0.45))
+                TimerControlBar(model: model)
+                Divider().overlay(MussolTheme.ink.opacity(0.45))
                 Group {
                     switch selectedTab {
                     case .today:

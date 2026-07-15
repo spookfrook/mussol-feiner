@@ -45,15 +45,49 @@ final class TrackerViewModel: ObservableObject {
         synchronizeFromStore()
     }
 
-    func startTimer(projectCode: String, mode: UIWorkMode) {
+    /// Starts (or switches) the timer. A non-empty `elapsedInput` backdates the start
+    /// so time already worked before pressing start is counted, e.g. "5m" or "1:30".
+    func startTimer(projectCode: String, mode: UIWorkMode, elapsedInput: String = "") {
+        let backdate: TimeInterval
+        let trimmedInput = elapsedInput.trimmingCharacters(in: .whitespacesAndNewlines)
+        if trimmedInput.isEmpty {
+            backdate = 0
+        } else if let parsed = ElapsedTimeParser.parse(trimmedInput) {
+            backdate = parsed
+        } else {
+            alertMessage = Self.elapsedInputHint
+            return
+        }
+
+        let start = Date().addingTimeInterval(-backdate)
+        if let active = store.activeTimer, start < active.start {
+            alertMessage = "The running timer started at \(formatEnglishDate(active.start, "HH:mm")). The new start can't be earlier than that."
+            return
+        }
+
         do {
             if let stopped = try store.startTimer(
                 projectCode: projectCode.projectCode,
                 workMode: coreMode(mode),
-                at: Date()
+                at: start
             ) {
                 enqueueFocusPrompt(for: stopped.id)
             }
+            synchronizeFromStore()
+        } catch {
+            present(error)
+        }
+    }
+
+    /// Rewrites the running timer's elapsed time from user input, Linear-style.
+    func commitElapsedEdit(_ input: String) {
+        guard store.activeTimer != nil else { return }
+        guard let elapsedTime = ElapsedTimeParser.parse(input) else {
+            alertMessage = Self.elapsedInputHint
+            return
+        }
+        do {
+            try store.updateActiveTimerStart(to: Date().addingTimeInterval(-elapsedTime))
             synchronizeFromStore()
         } catch {
             present(error)
@@ -359,4 +393,6 @@ final class TrackerViewModel: ObservableObject {
     private static let projectedActiveEntryID = UUID(
         uuidString: "00000000-0000-0000-0000-000000000000"
     )!
+
+    static let elapsedInputHint = "Enter elapsed time like 45m, 1h 30m, or 01:30:00."
 }

@@ -97,6 +97,28 @@ enum MussolFeinerCoreHarness {
         try expect(directoryPermissions?.intValue == 0o700, "Storage directory must be owner-only")
         try expect(filePermissions?.intValue == 0o600, "Storage file must be owner-only")
 
+        _ = try reloaded.startTimer(
+            projectCode: "adj",
+            workMode: .deepWork,
+            at: monday.addingTimeInterval(10_000)
+        )
+        try reloaded.updateActiveTimerStart(to: monday.addingTimeInterval(9_700))
+        try expect(
+            reloaded.activeTimer?.start == monday.addingTimeInterval(9_700),
+            "Active timer start must be adjustable"
+        )
+        let adjustedReload = try TimeTrackingStore(storageURL: storage)
+        try expect(
+            adjustedReload.activeTimer?.start == monday.addingTimeInterval(9_700),
+            "Adjusted active timer start must persist"
+        )
+
+        try expect(ElapsedTimeParser.parse("45") == 2_700, "Bare numbers must parse as minutes")
+        try expect(ElapsedTimeParser.parse("1h 30m") == 5_400, "Unit input must parse")
+        try expect(ElapsedTimeParser.parse("1h30") == 5_400, "Trailing bare numbers must drop one unit level")
+        try expect(ElapsedTimeParser.parse("01:30:00") == 5_400, "Clock input must parse")
+        try expect(ElapsedTimeParser.parse("1:99") == nil, "Out-of-range clock minutes must be rejected")
+
         do {
             _ = try TimeEntry(
                 projectCode: "A1B",

@@ -46,6 +46,8 @@ Color-coded entries, work-mode mix, and project totals at a glance.
 ## MVP
 
 - One active timer at a time
+- Start and stop from the menu bar popover or the analytics window
+- Editable elapsed time: backdate a start when work began before clocking in, or correct a running timer in place (`45m`, `1h 30m`, `01:30:00`)
 - Local JSON persistence with active-timer recovery
 - Optional 1 to 5 Focus Score when stopping
 - Manual entry creation and editing

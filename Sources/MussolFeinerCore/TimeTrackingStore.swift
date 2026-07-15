@@ -106,6 +106,23 @@ public final class TimeTrackingStore: ObservableObject {
         }
     }
 
+    /// Moves the active timer's start, e.g. to credit work done before it was started
+    /// or to correct its elapsed time while it runs.
+    public func updateActiveTimerStart(to date: Date) throws {
+        guard let timer = activeTimer else {
+            throw TimeTrackingValidationError.noActiveTimer
+        }
+
+        let updated = try ActiveTimer(
+            projectCode: timer.projectCode,
+            workMode: timer.workMode,
+            start: date
+        )
+        try mutateAndPersist {
+            activeTimer = updated
+        }
+    }
+
     @discardableResult
     public func addEntry(
         projectCode: String,
